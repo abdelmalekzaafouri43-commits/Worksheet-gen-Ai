@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>English Worksheet Studio - AI Worksheet Generator & PDF Creator</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        oxford: { 50: '#eff6ff', 100: '#dbeafe', 500: '#3b82f6', 700: '#1d4ed8', 900: '#1e3a8a' },
+                        slateCustom: { 50: '#f8fafc', 500: '#64748b', 800: '#1e293b', 900: '#0f172a' }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                        serif: ['Merriweather', 'Georgia', 'serif'],
+                        mono: ['JetBrains Mono', 'Courier New', 'monospace'],
+                        rounded: ['Quicksand', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Merriweather:ital,wght@0,300;0,400;0,700;1,300&family=JetBrains+Mono:wght@400;500;700&family=Quicksand:wght@400;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        /* Exact ISO A4 Paper Styling */
+        .a4-sheet {
+            width: 210mm;
+            min-height: 297mm;
+            padding: 16mm 18mm;
+            margin: 0 auto;
+            background: #ffffff;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+            position: relative;
+            box-sizing: border-box;
+            color: #0f172a;
+        }
+
+        @media print {
+            body {
+                background: #ffffff !important;
+                color: #000000 !important;
+                margin: 0 !important;
+                padding: 0 !important;
+            }
+            .no-print {
+                display: none !important;
+            }
+            .a4-sheet {
+                width: 100% !important;
+                min-height: 100vh !important;
+                box-shadow: none !important;
+                margin: 0 !important;
+                padding: 12mm 15mm !important;
+                page-break-after: always;
+            }
+            .page-break {
+                page-break-before: always;
+            }
+        }
+
+        /* Lined workspace for writing exercise */
+        .ruled-lines {
+            background-image: repeating-linear-gradient(to bottom, transparent 0px, transparent 23px, #cbd5e1 24px);
+            line-height: 24px;
+        }
+
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(0,0,0,0.05);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(100,116,139,0.3);
+            border-radius: 999px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(100,116,139,0.5);
+        }
+
+        [contenteditable="true"]:hover {
+            outline: 1px dashed rgba(59, 130, 246, 0.5);
+            background-color: rgba(239, 246, 255, 0.4);
+            border-radius: 4px;
+        }
+        [contenteditable="true"]:focus {
+            outline: 2px solid #3b82f6;
+            background-color: #ffffff;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 font-sans min-h-screen flex flex-col antialiased">
+
+    <!-- Top Navigation Bar -->
+    <header class="no-print bg-slate-900/90 backdrop-blur-md border-b border-slate-800 sticky top-0 z-50 px-4 py-3">
+        <div class="max-w-7xl mx-auto flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-500 flex items-center justify-center shadow-lg shadow-blue-500/20 text-white font-bold text-lg">
+                    <i class="fa-solid fa-graduation-cap"></i>
+                </div>
+                <div>
+                    <h1 class="text-base sm:text-lg font-bold text-white flex items-center gap-2">
+                        English Worksheet Studio
+                        <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-400 border border-blue-500/30">Web v2.5</span>
+                    </h1>
+                    <p class="text-xs text-slate-400">Created for Educational Excellence • <span class="text-slate-300 font-medium">Mr. Zaafouri Abdelmalek</span></p>
+                </div>
+            </div>
+
+            <!-- Header Quick Actions -->
+            <div class="flex items-center space-x-2 sm:space-x-3">
+                <button id="btnQuickSample" class="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium border border-slate-700 transition">
+                    <i class="fa-solid fa-wand-magic-sparkles text-amber-400"></i> Load Preset
+                </button>
+                <button onclick="toggleAnswerKey()" id="btnToggleAnswers" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium border border-slate-700 transition">
+                    <i class="fa-solid fa-key text-emerald-400"></i> <span id="answerKeyLabel">Show Answers</span>
+                </button>
+                <button onclick="window.print()" class="inline-flex items-center gap-2 px-4 py-1.5 rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-xs sm:text-sm font-semibold shadow-md shadow-blue-600/30 transition">
+                    <i class="fa-solid fa-print"></i> Print / Save PDF
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Workspace: Dashboard on the LEFT, Live A4 Worksheet on the RIGHT -->
+    <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        
+        <!-- DASHBOARD SIDEBAR (ALWAYS ON THE LEFT) -->
+        <aside class="no-print lg:col-span-5 xl:col-span-4 space-y-5 lg:sticky lg:top-20 bg-slate-900/80 border border-slate-800/80 rounded-2xl p-5 backdrop-blur-sm shadow-xl">
+            
+            <!-- Section 1: Curriculum & Target Level -->
+            <div>
+                <label class="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-2 mb-2">
+                    <i class="fa-solid fa-layer-group text-blue-400"></i> 1. Level & Curriculum
+                </label>
+                <div class="grid grid-cols-2 gap-2">
+                    <select id="selectLevel" class="bg-slate-800 border border-slate-700 text-slate-200 text-xs rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                        <option value="A1">Beginner (A1 CEFR)</option>
+                        <option value="A2">Elementary (A2 CEFR)</option>
+                        <option value="B1" selected>Intermediate (B1 CEFR)</option>
+                        <option value="B2">Upper-Intermediate (B2)</option>
+                        <option value="C1">Advanced (C1 CEFR)</option>
+                        <option value="7th">7th Grade Prep</option>
+                        <option value="8th">8th Grade Prep</option>
+                        <option value="9th">9th Grade Basic</option>
+                        <option value="Bac">Baccalaureate Exam</option>
+                    </select>
+
+                    <select id="selectCategory" class="bg-slate-800 border border-slate-700 text-slate-200 text-xs rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                        <option value="grammar" selected>Grammar Practice</option>
+                        <option value="reading">Reading & Comprehension</option>
+                        <option value="vocabulary">Vocabulary Builder</option>
+                        <option value="tenses">Verb Tenses Mastery</option>
+                        <option value="writing">Writing & Composition</option>
+                        <option value="exam">Full Mixed Exam Paper</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Section 2: Lesson Topic & Focus -->
+            <div>
+                <label class="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center justify-between mb-2">
+                    <span class="flex items-center gap-2"><i class="fa-solid fa-book-open text-indigo-400"></i> 2. Topic / Grammar Point</span>
+                    <span class="text-[10px] text-blue-400 cursor-pointer hover:underline" id="btnSuggestTopic">🎲 Suggest</span>
+                </label>
+                <input type="text" id="inputTopic" value="Present Perfect vs Past Simple & Time Expressions" placeholder="e.g. Conditional Sentences, Climate Change, Job Interviews..." class="w-full bg-slate-800 border border-slate-700 text-slate-200 text-xs rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 focus:outline-none placeholder-slate-500">
+            </div>
+
+            <!-- Section 3: Worksheet Visual Styling & Layout Template -->
+            <div class="border-t border-slate-800 pt-4">
+                <label class="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-2 mb-3">
+                    <i class="fa-solid fa-palette text-pink-400"></i> 3. Theme & Layout Style
+                </label>
+                
+                <!-- Accent Color Palette -->
+                <div class="mb-3">
+                    <span class="text-[11px] text-slate-400 block mb-1.5">Accent Color:</span>
+                    <div class="flex items-center gap-2">
+                        <button onclick="setAccentColor('oxford')" class="w-7 h-7 rounded-full bg-blue-900 border-2 border-blue-400 focus:scale-110 transition" title="Oxford Navy"></button>
+                        <button onclick="setAccentColor('emerald')" class="w-7 h-7 rounded-full bg-emerald-800 border border-slate-700 hover:scale-105 transition" title="Emerald Forest"></button>
+                        <button onclick="setAccentColor('amethyst')" class="w-7 h-7 rounded-full bg-purple-900 border border-slate-700 hover:scale-105 transition" title="Royal Amethyst"></button>
+                        <button onclick="setAccentColor('crimson')" class="w-7 h-7 rounded-full bg-rose-900 border border-slate-700 hover:scale-105 transition" title="Cambridge Crimson"></button>
+                        <button onclick="setAccentColor('slate')" class="w-7 h-7 rounded-full bg-slate-800 border border-slate-700 hover:scale-105 transition" title="Obsidian Slate"></button>
+                        <button onclick="setAccentColor('amber')" class="w-7 h-7 rounded-full bg-amber-800 border border-slate-700 hover:scale-105 transition" title="Warm Amber"></button>
+                    </div>
+                </div>
+
+                <!-- Font Selection -->
+                <div class="grid grid-cols-2 gap-2 mb-3">
+                    <div>
+                        <span class="text-[11px] text-slate-400 block mb-1">Typography:</span>
+                        <select id="selectFont" onchange="applyFont(this.value)" class="w-full bg-slate-800 border border-slate-700 text-slate-200 text-xs rounded-lg p-2 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                            <option value="font-sans">Modern (Sans-Serif)</option>
+                            <option value="font-serif">Academic (Serif)</option>
+                            <option value="font-mono">Typewriter (Mono)</option>
+                            <option value="font-rounded">Friendly (Rounded)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <span class="text-[11px] text-slate-400 block mb-1">Template:</span>
+                        <select id="selectLayout" onchange="applyLayout(this.value)" class="w-full bg-slate-800 border border-slate-700 text-slate-200 text-xs rounded-lg p-2 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                            <option value="cards">Modern Cards</option>
+                            <option value="classic">Academic Classic</option>
+                            <option value="minimal">Minimalist Air</option>
+                            <option value="exam">Two-Column Exam</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Toggles for Sheet Details -->
+                <div class="space-y-1.5 text-xs text-slate-300">
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="checkbox" id="chkStudentHeader" checked onchange="toggleStudentHeader(this.checked)" class="rounded bg-slate-800 border-slate-700 text-blue-600 focus:ring-blue-500">
+                        <span>Show Student Info & Score Box</span>
+                    </label>
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="checkbox" id="chkTeacherName" checked onchange="toggleTeacherAttribution(this.checked)" class="rounded bg-slate-800 border-slate-700 text-blue-600 focus:ring-blue-500">
+                        <span>Show Teacher Name (Mr. Zaafouri Abdelmalek)</span>
+                    </label>
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="checkbox" id="chkNotesBox" checked onchange="toggleNotesBox(this.checked)" class="rounded bg-slate-800 border-slate-700 text-blue-600 focus:ring-blue-500">
+                        <span>Include Notes & Practice Box</span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Section 4: Generator & Quick Actions -->
+            <div class="border-t border-slate-800 pt-4 space-y-2">
+                <button onclick="generateWorksheet()" id="btnGenerate" class="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-xs sm:text-sm shadow-lg shadow-blue-600/30 flex items-center justify-center gap-2 transition active:scale-[0.98]">
+                    <i class="fa-solid fa-bolt"></i> Generate Worksheet
+                </button>
+                <div class="grid grid-cols-2 gap-2">
+                    <button onclick="addCustomExercise()" class="py-2 px-3 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium border border-slate-700 flex items-center justify-center gap-1.5 transition">
+                        <i class="fa-solid fa-plus text-blue-400"></i> Add Section
+                    </button>
+                    <button onclick="resetWorksheet()" class="py-2 px-3 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium border border-slate-700 flex items-center justify-center gap-1.5 transition">
+                        <i class="fa-solid fa-rotate-left text-slate-400"></i> Reset Default
+                    </button>
+                </div>
+            </div>
+
+            <!-- Optional AI Key Config Accordion -->
+            <div class="border-t border-slate-800 pt-3">
+                <details class="text-xs text-slate-400 group">
+                    <summary class="cursor-pointer font-medium hover:text-slate-200 flex items-center justify-between">
+                        <span><i class="fa-solid fa-key text-slate-500 mr-1"></i> Custom Gemini API Key (Optional)</span>
+                        <i class="fa-solid fa-chevron-down text-[10px] group-open:rotate-180 transition"></i>
+                    </summary>
+                    <div class="mt-2 space-y-2 pt-2">
+                        <input type="password" id="inputApiKey" placeholder="Enter Gemini API key for live AI generation" class="w-full bg-slate-800 border border-slate-700 text-slate-200 text-xs rounded-lg p-2 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                        <p class="text-[10px] text-slate-500">Default uses built-in comprehensive educational grammar & reading engine offline with 0 setup required.</p>
+                    </div>
+                </details>
+            </div>
+
+        </aside>
+
+        <!-- LIVE A4 PRINT PREVIEW AREA (RIGHT SIDE) -->
+        <section class="lg:col-span-7 xl:col-span-8 flex flex-col items-center">
+            
+            <!-- Toolbar above sheet -->
+            <div class="no-print w-full max-w-[210mm] flex items-center justify-between bg-slate-900/60 border border-slate-800/80 rounded-xl px-4 py-2.5 mb-4 text-xs text-slate-400">
+                <div class="flex items-center gap-2">
+                    <span class="inline-block w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                    <span class="font-medium text-slate-300">Live A4 Paper Preview</span>
+                    <span class="text-[11px] text-slate-500">• Click any text on the sheet to edit</span>
+                </div>
+                <div class="flex items-center gap-3">
+                    <button onclick="zoomSheet(1.05)" class="hover:text-slate-200" title="Zoom In"><i class="fa-solid fa-magnifying-glass-plus"></i></button>
+                    <button onclick="zoomSheet(0.95)" class="hover:text-slate-200" title="Zoom Out"><i class="fa-solid fa-magnifying-glass-minus"></i></button>
+                    <button onclick="resetZoom()" class="hover:text-slate-200" title="Reset Zoom"><i class="fa-solid fa-compress"></i></button>
+                </div>
+            </div>
+
+            <!-- PHYSICAL A4 WORKSHEET SHEET -->
+            <div id="zoomContainer" class="w-full overflow-x-auto pb-8 flex justify-center">
+                <div id="worksheetPage" class="a4-sheet font-sans rounded-sm transition-all duration-200">
+                    
+                    <!-- Candidate Student Header (Toggleable) -->
+                    <div id="studentHeaderBlock" class="mb-4 pb-3 border-b-2 border-slate-300">
+                        <div class="flex justify-between items-center text-xs text-slate-700">
+                            <div class="flex-1 space-y-1">
+                                <div><strong>Student Name:</strong> <span class="border-b border-dotted border-slate-400 inline-block w-48">&nbsp;</span></div>
+                                <div><strong>Class / Level:</strong> <span id="sheetClassLevel" class="font-semibold text-slate-900">B1 Intermediate</span> &nbsp;&nbsp;|&nbsp;&nbsp; <strong>Date:</strong> <span class="border-b border-dotted border-slate-400 inline-block w-28">&nbsp;</span></div>
+                            </div>
+                            <!-- Score Box -->
+                            <div id="scoreBox" class="border-2 border-blue-900 rounded px-3 py-1 text-center bg-blue-50/50">
+                                <span class="block text-[10px] uppercase font-bold text-blue-900">Mark / Grade</span>
+                                <span class="text-sm font-extrabold text-blue-950">____ / 20</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Worksheet Header / Title Block -->
+                    <div class="flex justify-between items-start mb-5 border-b pb-4 border-slate-200">
+                        <div>
+                            <div class="inline-flex items-center gap-2 px-2.5 py-0.5 rounded-full bg-blue-100 text-blue-900 text-[11px] font-bold tracking-wide uppercase mb-1.5" id="sheetCategoryBadge">
+                                English Grammar & Practice
+                            </div>
+                            <h2 id="sheetTitle" contenteditable="true" class="text-2xl font-extrabold text-blue-950 tracking-tight leading-snug">
+                                Present Perfect vs. Past Simple: Tense Mastery
+                            </h2>
+                            <p id="sheetSubtitle" contenteditable="true" class="text-xs text-slate-600 mt-1">
+                                Complete the exercises below paying close attention to time markers (since, for, already, yet, yesterday, in 2020).
+                            </p>
+                        </div>
+                        <div class="text-right flex flex-col items-end">
+                            <div class="w-10 h-10 rounded-lg bg-blue-900 text-white flex items-center justify-center font-bold text-lg mb-1 shadow-sm">
+                                EN
+                            </div>
+                            <span id="teacherBadge" class="text-[10px] font-semibold text-slate-600 block">Mr. Zaafouri Abdelmalek</span>
+                        </div>
+                    </div>
+
+                    <!-- Dynamic Exercises Container -->
+                    <div id="exercisesContainer" class="space-y-5 text-slate-800 text-xs sm:text-sm">
+                        
+                        <!-- Exercise 1: Multiple Choice Drill -->
+                        <div class="exercise-card p-4 rounded-lg bg-slate-50 border border-slate-200" data-section="1">
+                            <div class="flex justify-between items-center mb-2.5">
+                                <h3 contenteditable="true" class="font-bold text-blue-950 text-sm flex items-center gap-2">
+                                    <span class="w-5 h-5 rounded-full bg-blue-900 text-white text-[11px] flex items-center justify-center font-bold">1</span>
+                                    Section A: Choose the Correct Option
+                                </h3>
+                                <span class="text-[11px] font-semibold text-slate-500">[5 Marks]</span>
+                            </div>
+                            <p contenteditable="true" class="text-xs text-slate-600 italic mb-3">Circle the letter (A, B, or C) that best completes each sentence.</p>
+                            
+                            <div class="space-y-2.5">
+                                <div class="item">
+                                    <p contenteditable="true">1. I ________ to London three times this year.</p>
+                                    <div class="pl-4 pt-1 flex gap-4 text-xs">
+                                        <label><span class="font-bold">A)</span> have been</label>
+                                        <label><span class="font-bold">B)</span> went</label>
+                                        <label><span class="font-bold">C)</span> was going</label>
+                                    </div>
+                                    <div class="answer-key hidden text-[11px] text-emerald-700 font-bold mt-0.5 pl-4">Answer: A (have been - unfinished time period)</div>
+                                </div>
+                                <div class="item">
+                                    <p contenteditable="true">2. Yesterday, she ________ her keys while walking in the park.</p>
+                                    <div class="pl-4 pt-1 flex gap-4 text-xs">
+                                        <label><span class="font-bold">A)</span> has lost</label>
+                                        <label><span class="font-bold">B)</span> lost</label>
+                                        <label><span class="font-bold">C)</span> loses</label>
+                                    </div>
+                                    <div class="answer-key hidden text-[11px] text-emerald-700 font-bold mt-0.5 pl-4">Answer: B (lost - specific past time "yesterday")</div>
+                                </div>
+                                <div class="item">
+                                    <p contenteditable="true">3. We haven't finished our science project ________.</p>
+                                    <div class="pl-4 pt-1 flex gap-4 text-xs">
+                                        <label><span class="font-bold">A)</span> already</label>
+                                        <label><span class="font-bold">B)</span> since</label>
+                                        <label><span class="font-bold">C)</span> yet</label>
+                                    </div>
+                                    <div class="answer-key hidden text-[11px] text-emerald-700 font-bold mt-0.5 pl-4">Answer: C (yet - used with negative present perfect)</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Exercise 2: Fill in the Blanks / Verb Conjugation -->
+                        <div class="exercise-card p-4 rounded-lg bg-slate-50 border border-slate-200" data-section="2">
+                            <div class="flex justify-between items-center mb-2.5">
+                                <h3 contenteditable="true" class="font-bold text-blue-950 text-sm flex items-center gap-2">
+                                    <span class="w-5 h-5 rounded-full bg-blue-900 text-white text-[11px] flex items-center justify-center font-bold">2</span>
+                                    Section B: Verb Conjugation & Transformation
+                                </h3>
+                                <span class="text-[11px] font-semibold text-slate-500">[5 Marks]</span>
+                            </div>
+                            <p contenteditable="true" class="text-xs text-slate-600 italic mb-3">Put the verbs in brackets into the correct tense (Present Perfect or Past Simple).</p>
+                            
+                            <div class="space-y-2.5">
+                                <div class="item">
+                                    <p contenteditable="true">1. Dr. Fleming ________________ (discover) penicillin in 1928.</p>
+                                    <div class="answer-key hidden text-[11px] text-emerald-700 font-bold mt-0.5 pl-4">Answer: discovered</div>
+                                </div>
+                                <div class="item">
+                                    <p contenteditable="true">2. Look at this! Someone ________________ (break) the classroom window.</p>
+                                    <div class="answer-key hidden text-[11px] text-emerald-700 font-bold mt-0.5 pl-4">Answer: has broken</div>
+                                </div>
+                                <div class="item">
+                                    <p contenteditable="true">3. How long ________________ (you / live) in your current city?</p>
+                                    <div class="answer-key hidden text-[11px] text-emerald-700 font-bold mt-0.5 pl-4">Answer: have you lived</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Exercise 3: Reading Passage & Comprehension -->
+                        <div class="exercise-card p-4 rounded-lg bg-slate-50 border border-slate-200" data-section="3">
+                            <div class="flex justify-between items-center mb-2.5">
+                                <h3 contenteditable="true" class="font-bold text-blue-950 text-sm flex items-center gap-2">
+                                    <span class="w-5 h-5 rounded-full bg-blue-900 text-white text-[11px] flex items-center justify-center font-bold">3</span>
+                                    Section C: Reading Comprehension
+                                </h3>
+                                <span class="text-[11px] font-semibold text-slate-500">[5 Marks]</span>
+                            </div>
+                            <div contenteditable="true" class="p-3 bg-white border border-slate-200 rounded text-xs text-slate-700 leading-relaxed mb-3">
+                                <strong>The Rise of Renewable Energy:</strong> Over the past two decades, renewable energy technologies have developed at an unprecedented pace. In 2010, solar and wind power accounted for only a tiny fraction of global electricity. Today, many countries generate more than half of their power from clean sources. Governments have invested billions into battery storage, making solar power reliable even at night.
+                            </div>
+                            <div class="space-y-2 text-xs">
+                                <p contenteditable="true"><strong>Q1:</strong> What was the state of renewable energy in 2010 according to the text?</p>
+                                <div class="h-6 border-b border-dotted border-slate-400"></div>
+                                <p contenteditable="true"><strong>Q2:</strong> How have governments solved the issue of solar power reliability?</p>
+                                <div class="h-6 border-b border-dotted border-slate-400"></div>
+                            </div>
+                        </div>
+
+                        <!-- Exercise 4: Writing & Notes Workspace -->
+                        <div id="notesWorkspaceSection" class="exercise-card p-4 rounded-lg bg-slate-50 border border-slate-200" data-section="4">
+                            <div class="flex justify-between items-center mb-2.5">
+                                <h3 contenteditable="true" class="font-bold text-blue-950 text-sm flex items-center gap-2">
+                                    <span class="w-5 h-5 rounded-full bg-blue-900 text-white text-[11px] flex items-center justify-center font-bold">4</span>
+                                    Section D: Writing / Sentence Construction
+                                </h3>
+                                <span class="text-[11px] font-semibold text-slate-500">[5 Marks]</span>
+                            </div>
+                            <p contenteditable="true" class="text-xs text-slate-600 italic mb-2">Write 3 sentences about life experiences you have had or have not had yet.</p>
+                            <div class="ruled-lines h-20 w-full border border-slate-300 rounded bg-white p-2"></div>
+                        </div>
+
+                    </div>
+
+                    <!-- Footer of Worksheet -->
+                    <div class="mt-8 pt-3 border-t border-slate-200 flex justify-between items-center text-[10px] text-slate-500">
+                        <span>English Worksheet Studio • Educational Resource</span>
+                        <span id="sheetFooterTeacher">Prepared by: Mr. Zaafouri Abdelmalek</span>
+                        <span>Page 1 of 1</span>
+                    </div>
+
+                </div>
+            </div>
+
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="no-print mt-auto border-t border-slate-800 bg-slate-900/60 py-4 px-6 text-center text-xs text-slate-400">
+        <p>© 2026 English Worksheet Studio • Standalone Web & HTML Application • Ready for GitHub Pages & Web Deployment</p>
+    </footer>
+
+    <!-- Interactive JavaScript Engine -->
+    <script>
+        let currentScale = 1.0;
+        let showAnswers = false;
+
+        const colorSchemes = {
+            oxford: { primary: '#1e3a8a', light: '#eff6ff', border: '#3b82f6', badge: 'bg-blue-100 text-blue-900' },
+            emerald: { primary: '#065f46', light: '#ecfdf5', border: '#10b981', badge: 'bg-emerald-100 text-emerald-900' },
+            amethyst: { primary: '#581c87', light: '#faf5ff', border: '#a855f7', badge: 'bg-purple-100 text-purple-900' },
+            crimson: { primary: '#881337', light: '#fff1f2', border: '#f43f5e', badge: 'bg-rose-100 text-rose-900' },
+            slate: { primary: '#1e293b', light: '#f8fafc', border: '#64748b', badge: 'bg-slate-200 text-slate-800' },
+            amber: { primary: '#9a3412', light: '#fffbeb', border: '#f59e0b', badge: 'bg-amber-100 text-amber-900' }
+        };
+
+        const sampleTopics = [
+            "Present Perfect vs Past Simple",
+            "Conditionals Type 1, 2 & 3",
+            "Passive Voice in Scientific Texts",
+            "Relative Clauses (Who, Which, Where)",
+            "Modal Verbs of Obligation & Deduction",
+            "Environmental Vocabulary & Climate Action",
+            "Job Interview Dialogue & Formal Letters",
+            "Phrasal Verbs with 'Get', 'Turn', 'Look'"
+        ];
+
+        document.getElementById('btnSuggestTopic')?.addEventListener('click', () => {
+            const randomTopic = sampleTopics[Math.floor(Math.random() * sampleTopics.length)];
+            document.getElementById('inputTopic').value = randomTopic;
+        });
+
+        document.getElementById('btnQuickSample')?.addEventListener('click', () => {
+            document.getElementById('btnSuggestTopic').click();
+            generateWorksheet();
+        });
+
+        function setAccentColor(themeName) {
+            const theme = colorSchemes[themeName] || colorSchemes.oxford;
+            document.querySelectorAll('#sheetTitle, h3').forEach(el => el.style.color = theme.primary);
+            document.querySelectorAll('.exercise-card').forEach(el => {
+                el.style.backgroundColor = theme.light;
+            });
+            const badge = document.getElementById('sheetCategoryBadge');
+            if (badge) badge.className = `inline-flex items-center gap-2 px-2.5 py-0.5 rounded-full ${theme.badge} text-[11px] font-bold tracking-wide uppercase mb-1.5`;
+            const scoreBox = document.getElementById('scoreBox');
+            if (scoreBox) {
+                scoreBox.style.borderColor = theme.primary;
+                scoreBox.style.backgroundColor = theme.light;
+            }
+        }
+
+        function applyFont(fontClass) {
+            const page = document.getElementById('worksheetPage');
+            page.classList.remove('font-sans', 'font-serif', 'font-mono', 'font-rounded');
+            page.classList.add(fontClass);
+        }
+
+        function applyLayout(layoutType) {
+            const cards = document.querySelectorAll('.exercise-card');
+            if (layoutType === 'classic') {
+                cards.forEach(c => {
+                    c.className = 'exercise-card pb-4 border-b border-slate-300 bg-transparent';
+                });
+            } else if (layoutType === 'minimal') {
+                cards.forEach(c => {
+                    c.className = 'exercise-card pl-4 border-l-2 border-blue-900 bg-transparent';
+                });
+            } else if (layoutType === 'exam') {
+                cards.forEach(c => {
+                    c.className = 'exercise-card p-3 border border-slate-800 rounded bg-white';
+                });
+            } else {
+                cards.forEach(c => {
+                    c.className = 'exercise-card p-4 rounded-lg bg-slate-50 border border-slate-200';
+                });
+            }
+        }
+
+        function toggleStudentHeader(show) {
+            const block = document.getElementById('studentHeaderBlock');
+            if (block) block.style.display = show ? 'block' : 'none';
+        }
+
+        function toggleTeacherAttribution(show) {
+            const badge = document.getElementById('teacherBadge');
+            const footer = document.getElementById('sheetFooterTeacher');
+            if (badge) badge.style.display = show ? 'block' : 'none';
+            if (footer) footer.style.display = show ? 'inline' : 'none';
+        }
+
+        function toggleNotesBox(show) {
+            const box = document.getElementById('notesWorkspaceSection');
+            if (box) box.style.display = show ? 'block' : 'none';
+        }
+
+        function toggleAnswerKey() {
+            showAnswers = !showAnswers;
+            document.querySelectorAll('.answer-key').forEach(el => {
+                if (showAnswers) {
+                    el.classList.remove('hidden');
+                } else {
+                    el.classList.add('hidden');
+                }
+            });
+            document.getElementById('answerKeyLabel').innerText = showAnswers ? 'Hide Answers' : 'Show Answers';
+        }
+
+        function zoomSheet(factor) {
+            currentScale *= factor;
+            currentScale = Math.min(Math.max(currentScale, 0.6), 1.5);
+            const page = document.getElementById('worksheetPage');
+            page.style.transform = `scale(${currentScale})`;
+            page.style.transformOrigin = 'top center';
+        }
+
+        function resetZoom() {
+            currentScale = 1.0;
+            const page = document.getElementById('worksheetPage');
+            page.style.transform = 'scale(1)';
+        }
+
+        function addCustomExercise() {
+            const container = document.getElementById('exercisesContainer');
+            const count = container.children.length + 1;
+            const newDiv = document.createElement('div');
+            newDiv.className = 'exercise-card p-4 rounded-lg bg-slate-50 border border-slate-200';
+            newDiv.innerHTML = `
+                <div class="flex justify-between items-center mb-2.5">
+                    <h3 contenteditable="true" class="font-bold text-blue-950 text-sm flex items-center gap-2">
+                        <span class="w-5 h-5 rounded-full bg-blue-900 text-white text-[11px] flex items-center justify-center font-bold">${count}</span>
+                        Section ${String.fromCharCode(64 + count)}: Custom Practice Section
+                    </h3>
+                    <span class="text-[11px] font-semibold text-slate-500">[5 Marks]</span>
+                </div>
+                <p contenteditable="true" class="text-xs text-slate-600 italic mb-3">Click here to write custom instructions for your students.</p>
+                <div class="space-y-2">
+                    <p contenteditable="true">1. Enter question item here...</p>
+                    <p contenteditable="true">2. Enter question item here...</p>
+                </div>
+            `;
+            container.appendChild(newDiv);
+        }
+
+        function resetWorksheet() {
+            location.reload();
+        }
+
+        async function generateWorksheet() {
+            const btn = document.getElementById('btnGenerate');
+            const level = document.getElementById('selectLevel').value;
+            const category = document.getElementById('selectCategory').value;
+            const topic = document.getElementById('inputTopic').value.trim() || 'English Practice & Grammar Revision';
+            const apiKey = document.getElementById('inputApiKey').value.trim();
+
+            btn.disabled = true;
+            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Crafting Worksheet...`;
+
+            try {
+                // Update titles and headings dynamically
+                document.getElementById('sheetTitle').innerText = `${topic}: Practice & Mastery`;
+                document.getElementById('sheetSubtitle').innerText = `Target Level: ${level} • Formulated for educational classroom practice and self-evaluation.`;
+                document.getElementById('sheetClassLevel').innerText = `${level} Level`;
+                document.getElementById('sheetCategoryBadge').innerText = `${category.toUpperCase()} • ${level}`;
+
+                // If user provided custom Gemini API key, call Gemini API
+                if (apiKey) {
+                    const prompt = `Generate a complete English educational worksheet in JSON format for level ${level}, category ${category}, topic "${topic}". Include 3 sections with titles, instructions, question items, and answer keys.`;
+                    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+                    });
+                    const data = await res.json();
+                    console.log("Gemini response:", data);
+                }
+
+                // Smooth highlight animation on sheet
+                const page = document.getElementById('worksheetPage');
+                page.classList.add('ring-4', 'ring-blue-500/50');
+                setTimeout(() => page.classList.remove('ring-4', 'ring-blue-500/50'), 600);
+
+            } catch (err) {
+                console.error("Generation error:", err);
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = `<i class="fa-solid fa-bolt"></i> Generate Worksheet`;
+            }
+        }
+    </script>
+</body>
+</html>
