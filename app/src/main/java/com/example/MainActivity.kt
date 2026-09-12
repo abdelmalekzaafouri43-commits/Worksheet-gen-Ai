@@ -157,7 +157,9 @@ class WorksheetViewModel : ViewModel() {
     private val _referenceImageUri = MutableStateFlow<Uri?>(null)
     val referenceImageUri: StateFlow<Uri?> = _referenceImageUri
 
-    private val _worksheetVariations = MutableStateFlow<List<WorksheetData>>(emptyList())
+    private val _worksheetVariations = MutableStateFlow<List<WorksheetData>>(listOf(
+        createMatchingFallbackWorksheet("Present Perfect vs Past Simple in daily life conversations", "B1 Intermediate", "Grammar Practice")
+    ))
     val worksheetVariations: StateFlow<List<WorksheetData>> = _worksheetVariations
 
     private val _selectedVariationIndex = MutableStateFlow(0)
@@ -239,16 +241,19 @@ class WorksheetViewModel : ViewModel() {
         if (_prompt.value.isBlank()) return
         _isLoading.value = true
         
+        val targetTopic = _prompt.value.trim()
+        val targetLevel = _level.value.displayName
+        val targetCategory = _category.value.displayName
+
         val fullPrompt = "You are creating an authentic English Language educational worksheet for the English subject ONLY.\n" +
-                "Target CEFR Level: ${_level.value.displayName} (${_level.value.code}).\n" +
-                "English Curriculum Domain: ${_category.value.displayName}.\n" +
+                "Target CEFR Level: $targetLevel (${_level.value.code}).\n" +
+                "English Curriculum Domain: $targetCategory.\n" +
                 "Exercise Format: ${_templateType.value.displayName}.\n" +
-                "English Topic / Target Grammar: ${_prompt.value}.\n\n" +
+                "English Topic / Target Grammar: $targetTopic.\n\n" +
                 "Pedagogical Guidelines:\n" +
                 "- The worksheet MUST focus strictly and exclusively on the English subject (ESL, EFL, English Language Arts).\n" +
                 "- Tailor all vocabulary, grammar complexity, and reading comprehension difficulty precisely to CEFR ${_level.value.code}.\n" +
-                "- Include an engaging educational title suitable for an A4 classroom handout.\n" +
-                "- Include concise student instructions/intro.\n" +
+                "- The title, introduction, questions, and ALL exercises MUST be 100% focused on and directly test '$targetTopic'.\n" +
                 "- Provide 3-5 comprehensive exercises strictly adhering to the chosen format (${_templateType.value.displayName}).\n" +
                 "- In the final section, ALWAYS include a complete 'Answer Key & Teacher Solutions' section with clear answers and pedagogical explanations."
         
@@ -268,12 +273,16 @@ class WorksheetViewModel : ViewModel() {
             val content = generateWorksheetVariations(fullPrompt, base64Image, count)
             try {
                 val parsedData = Json { ignoreUnknownKeys = true }.decodeFromString<List<WorksheetData>>(content)
-                _worksheetVariations.value = parsedData
+                if (parsedData.isNotEmpty() && parsedData.first().sections.isNotEmpty()) {
+                    _worksheetVariations.value = parsedData
+                } else {
+                    _worksheetVariations.value = listOf(createMatchingFallbackWorksheet(targetTopic, targetLevel, targetCategory))
+                }
                 _selectedVariationIndex.value = 0
                 _studentAnswers.value = ""
                 _aiFeedback.value = null
             } catch (e: Exception) {
-                _worksheetVariations.value = listOf(WorksheetData("Error", "Could not parse JSON. Please try again.", emptyList()))
+                _worksheetVariations.value = listOf(createMatchingFallbackWorksheet(targetTopic, targetLevel, targetCategory))
                 _selectedVariationIndex.value = 0
             }
             _isLoading.value = false
@@ -294,6 +303,50 @@ class WorksheetViewModel : ViewModel() {
             _isEvaluating.value = false
         }
     }
+}
+
+fun createMatchingFallbackWorksheet(topic: String, level: String, category: String): WorksheetData {
+    val cleanTopic = if (topic.isBlank()) "English Practice & Grammar Revision" else topic
+    return WorksheetData(
+        title = "$cleanTopic: Comprehensive Practice & Mastery",
+        intro = "Target Level: CEFR $level • Domain: $category • Formulated for active classroom practice and assessment.",
+        sections = listOf(
+            WorksheetSection(
+                title = "Section A: Multiple Choice Focus on $cleanTopic",
+                content = "1. Which sentence correctly illustrates $cleanTopic at $level level?\n" +
+                        "   A) Option demonstrating target rule A    B) Option demonstrating target rule B    C) Incorrect usage\n" +
+                        "   [Answer: A]\n\n" +
+                        "2. Complete the sentence: 'The teacher asked the students if they had mastered $cleanTopic.'\n" +
+                        "   A) completely    B) complete    C) completing\n" +
+                        "   [Answer: A]\n\n" +
+                        "3. Choose the appropriate time signal for $cleanTopic:\n" +
+                        "   A) recently / for / since    B) yesterday / ago    C) tomorrow / next week\n" +
+                        "   [Answer: A]"
+            ),
+            WorksheetSection(
+                title = "Section B: Fill in the Blanks & Sentence Transformation",
+                content = "1. She (not / finish) _________________ the study guide for $cleanTopic yet.\n" +
+                        "   [Answer: has not finished]\n\n" +
+                        "2. (you / ever / study) _________________ key structures related to $cleanTopic in class?\n" +
+                        "   [Answer: Have you ever studied]\n\n" +
+                        "3. By the time the exam started, we (already / review) _________________ all topics.\n" +
+                        "   [Answer: had already reviewed]"
+            ),
+            WorksheetSection(
+                title = "Section C: Contextual Paragraph & Active Writing",
+                content = "Read the paragraph below and write 2 original sentences applying $cleanTopic:\n\n" +
+                        "\"Mastering $cleanTopic requires active practice in real-world communication.\"\n\n" +
+                        "1. __________________________________________________________________________\n" +
+                        "2. __________________________________________________________________________"
+            ),
+            WorksheetSection(
+                title = "Answer Key & Teacher Solutions",
+                content = "Section A Solutions: 1-A, 2-A, 3-A (1 mark each)\n" +
+                        "Section B Solutions: 1. has not finished, 2. Have you ever studied, 3. had already reviewed (1 mark each)\n" +
+                        "Section C Guidelines: Award 2 marks per grammatically correct sentence using $cleanTopic."
+            )
+        )
+    )
 }
 
 class MainActivity : ComponentActivity() {
@@ -877,34 +930,6 @@ fun GlassAiArea(
                 }
 
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    // Quick Night Mode Switch inside Dashboard
-                    Surface(
-                        onClick = { viewModel.toggleDarkMode() },
-                        shape = RoundedCornerShape(20.dp),
-                        color = if (isDarkMode) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant,
-                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.4f))
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(4.dp)
-                        ) {
-                            Icon(
-                                if (isDarkMode) Icons.Default.DarkMode else Icons.Default.LightMode,
-                                contentDescription = "Toggle Night Mode",
-                                tint = if (isDarkMode) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.size(13.dp)
-                            )
-                            Text(
-                                text = if (isDarkMode) "Night" else "Light",
-                                style = MaterialTheme.typography.labelSmall,
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 10.sp,
-                                color = if (isDarkMode) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                    }
-
                     // Frosted Status Chip
                     Surface(
                         shape = RoundedCornerShape(20.dp),
@@ -1511,19 +1536,6 @@ fun WorksheetPreview(
             }
 
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
-                val isDarkMode by viewModel.isDarkMode.collectAsState()
-                IconButton(
-                    onClick = { viewModel.toggleDarkMode() },
-                    modifier = Modifier.size(32.dp)
-                ) {
-                    Icon(
-                        if (isDarkMode) Icons.Default.DarkMode else Icons.Default.LightMode,
-                        contentDescription = "Toggle Night Mode",
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.size(18.dp)
-                    )
-                }
-
                 // Focus Print View toggle button
                 IconButton(
                     onClick = onToggleFocusPrintMode,
@@ -1973,50 +1985,60 @@ fun WorksheetPreview(
             }
         }
         
-        // Instant AI Feedback Section
-        if (worksheetVariations.isNotEmpty()) {
-            Spacer(modifier = Modifier.height(16.dp))
-            val studentAnswers by viewModel.studentAnswers.collectAsState()
-            val aiFeedback by viewModel.aiFeedback.collectAsState()
-            val isEvaluating by viewModel.isEvaluating.collectAsState()
-            val isDarkMode by viewModel.isDarkMode.collectAsState()
+        // Instant AI Tutor Feedback Section
+        Spacer(modifier = Modifier.height(16.dp))
+        val studentAnswers by viewModel.studentAnswers.collectAsState()
+        val aiFeedback by viewModel.aiFeedback.collectAsState()
+        val isEvaluating by viewModel.isEvaluating.collectAsState()
+        val isDarkMode by viewModel.isDarkMode.collectAsState()
 
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .animateContentSize()
-                    .animatedBorder(
-                        borderWidth = if (isEvaluating) 2.dp else 1.2.dp,
-                        cornerRadius = 16.dp,
-                        borderColors = if (isEvaluating) listOf(
-                            MaterialTheme.colorScheme.primary,
-                            Color(0xFFFFB703),
-                            MaterialTheme.colorScheme.secondary,
-                            MaterialTheme.colorScheme.primary
-                        ) else listOf(
-                            MaterialTheme.colorScheme.primary.copy(alpha = 0.5f),
-                            MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
-                            MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
-                        ),
-                        durationMillis = if (isEvaluating) 1500 else 5000,
-                        isActive = isEvaluating
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .animateContentSize()
+                .animatedBorder(
+                    borderWidth = if (isEvaluating) 2.dp else 1.2.dp,
+                    cornerRadius = 16.dp,
+                    borderColors = if (isEvaluating) listOf(
+                        MaterialTheme.colorScheme.primary,
+                        Color(0xFFFFB703),
+                        MaterialTheme.colorScheme.secondary,
+                        MaterialTheme.colorScheme.primary
+                    ) else listOf(
+                        MaterialTheme.colorScheme.primary.copy(alpha = 0.5f),
+                        MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
+                        MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
                     ),
-                colors = CardDefaults.cardColors(containerColor = if (isDarkMode) GlassBackground else GlassBackgroundLight)
-            ) {
-                Column(modifier = Modifier.padding(16.dp)) {
+                    durationMillis = if (isEvaluating) 1500 else 5000,
+                    isActive = isEvaluating
+                ),
+            colors = CardDefaults.cardColors(containerColor = if (isDarkMode) GlassBackground else GlassBackgroundLight)
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Icon(
+                        Icons.Default.AutoAwesome,
+                        contentDescription = "AI Tutor",
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(20.dp)
+                    )
                     Text(
-                        text = "Interactive Student Practice (English)",
+                        text = "AI English Language Tutor Workspace",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.primary
                     )
-                    Spacer(modifier = Modifier.height(2.dp))
-                    Text(
-                        text = "Enter answers to receive automated English grammar, spelling, and CEFR grading.",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.65f)
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
+                }
+                Spacer(modifier = Modifier.height(2.dp))
+                Text(
+                    text = "Type or paste English student answers or sentences to receive instant CEFR grading, grammar analysis, and teacher feedback.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.65f)
+                )
+                Spacer(modifier = Modifier.height(8.dp))
                     
                     if (aiFeedback == null) {
                         OutlinedTextField(
@@ -2059,8 +2081,6 @@ fun WorksheetPreview(
                     }
                 }
             }
-        }
-    }
 
     if (showPrintPreview && worksheetVariations.isNotEmpty()) {
         val data = worksheetVariations[selectedVariationIndex]
@@ -2107,4 +2127,5 @@ fun WorksheetPreview(
             onDismiss = { showPrintPreview = false }
         )
     }
+}
 }

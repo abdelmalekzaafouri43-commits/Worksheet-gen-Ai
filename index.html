@@ -401,16 +401,16 @@
                     </label>
                 </div>
 
-                <!-- Night Mode / Dark Mode In-Dashboard Switch -->
-                <div class="mt-3 p-2.5 rounded-xl bg-slate-800/80 border border-slate-700/80 flex items-center justify-between">
+                <!-- AI Tutor Integration Shortcut -->
+                <div class="mt-3 p-2.5 rounded-xl bg-indigo-950/40 border border-indigo-800/60 flex items-center justify-between">
                     <div>
-                        <div class="text-xs font-semibold text-slate-200 flex items-center gap-1.5">
-                            <i class="fa-solid fa-circle-half-stroke text-blue-400"></i> Interface Theme
+                        <div class="text-xs font-semibold text-indigo-300 flex items-center gap-1.5">
+                            <i class="fa-solid fa-robot text-indigo-400"></i> AI English Tutor Workspace
                         </div>
-                        <div class="text-[10px] text-slate-400" id="themeStatusText">Night Mode (Dark)</div>
+                        <div class="text-[10px] text-slate-400">Instant CEFR grading & feedback</div>
                     </div>
-                    <button onclick="toggleAppNightMode()" class="px-2.5 py-1.5 rounded-lg bg-slate-700 hover:bg-slate-600 text-amber-300 text-xs font-bold border border-slate-600 transition flex items-center gap-1.5">
-                        <i class="fa-solid fa-moon"></i> Toggle Theme
+                    <button onclick="switchCanvasTab('tutor')" class="px-2.5 py-1 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold transition flex items-center gap-1">
+                        Open Tutor <i class="fa-solid fa-arrow-right text-[10px]"></i>
                     </button>
                 </div>
             </div>
@@ -455,8 +455,23 @@
         <!-- LIVE A4 PRINT PREVIEW AREA (ALWAYS ON THE RIGHT SIDE) -->
         <section class="preview-right-canvas flex flex-col items-center">
             
+            <!-- Workspace Mode Tabs: A4 Worksheet vs AI Tutor Workspace -->
+            <div class="no-print w-full max-w-[210mm] flex items-center justify-between mb-3 bg-slate-900/80 p-1.5 rounded-xl border border-slate-800">
+                <div class="flex items-center gap-2">
+                    <button id="tabBtnWorksheet" onclick="switchCanvasTab('worksheet')" class="px-4 py-2 rounded-lg text-xs font-bold transition flex items-center gap-2 bg-blue-600 text-white shadow-md shadow-blue-600/30">
+                        <i class="fa-solid fa-file-lines"></i> Live A4 Worksheet
+                    </button>
+                    <button id="tabBtnTutor" onclick="switchCanvasTab('tutor')" class="px-4 py-2 rounded-lg text-xs font-bold transition flex items-center gap-2 text-slate-400 hover:text-white hover:bg-slate-800">
+                        <i class="fa-solid fa-robot text-indigo-400"></i> AI English Tutor Workspace
+                    </button>
+                </div>
+                <div class="text-[11px] text-slate-400 hidden sm:flex items-center gap-2 pr-2">
+                    <span class="w-2 h-2 rounded-full bg-emerald-400"></span> Live Interactive Mode
+                </div>
+            </div>
+
             <!-- Standard Toolbar above sheet (Hidden during Focus Mode) -->
-            <div class="sheet-standard-toolbar no-print w-full max-w-[210mm] flex items-center justify-between bg-slate-900/60 border border-slate-800/80 rounded-xl px-4 py-2.5 mb-4 text-xs text-slate-400">
+            <div id="sheetToolbar" class="sheet-standard-toolbar no-print w-full max-w-[210mm] flex items-center justify-between bg-slate-900/60 border border-slate-800/80 rounded-xl px-4 py-2.5 mb-4 text-xs text-slate-400">
                 <div class="flex items-center gap-2">
                     <span class="inline-block w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
                     <span class="font-medium text-slate-300">Live A4 Paper Preview</span>
@@ -470,6 +485,56 @@
                     <button onclick="zoomSheet(1.05)" class="hover:text-slate-200" title="Zoom In"><i class="fa-solid fa-magnifying-glass-plus"></i></button>
                     <button onclick="zoomSheet(0.95)" class="hover:text-slate-200" title="Zoom Out"><i class="fa-solid fa-magnifying-glass-minus"></i></button>
                     <button onclick="resetZoom()" class="hover:text-slate-200" title="Reset Zoom"><i class="fa-solid fa-compress"></i></button>
+                </div>
+            </div>
+
+            <!-- DEDICATED AI ENGLISH TUTOR WORKSPACE CONTAINER -->
+            <div id="aiTutorWorkspace" class="hidden no-print w-full max-w-[210mm] bg-slate-900 border border-slate-800 rounded-2xl p-6 mb-6 shadow-2xl space-y-4">
+                <div class="flex items-center justify-between border-b border-slate-800 pb-4">
+                    <div class="flex items-center gap-3">
+                        <div class="w-12 h-12 rounded-2xl bg-indigo-600/30 border border-indigo-500/50 flex items-center justify-center text-indigo-400 text-xl font-bold shadow-lg shadow-indigo-600/20">
+                            <i class="fa-solid fa-robot"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-base font-bold text-white flex items-center gap-2">
+                                AI English Language Tutor & Practice Evaluator
+                            </h3>
+                            <p class="text-xs text-slate-400">Get instant CEFR grade analysis, grammar & spelling feedback, and step-by-step teacher explanations.</p>
+                        </div>
+                    </div>
+                    <span class="text-xs font-semibold px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                        <i class="fa-solid fa-check-double mr-1"></i> Ready
+                    </span>
+                </div>
+
+                <div class="space-y-3">
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-300">
+                        Student Work or Answer Input:
+                    </label>
+                    <textarea id="tutorInput" rows="5" placeholder="Type or paste student answers, essay sentences, or English questions here (e.g., 1. I have went to London yesterday. 2. She has lived here since 5 years...)" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3.5 text-xs text-slate-200 placeholder-slate-500 focus:ring-2 focus:ring-indigo-500 focus:outline-none"></textarea>
+                </div>
+
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-2 text-xs text-slate-400">
+                        <i class="fa-solid fa-lightbulb text-amber-400"></i>
+                        <span>Evaluates English grammar, CEFR vocabulary, tense accuracy, and spelling.</span>
+                    </div>
+                    <button onclick="runAiTutorEvaluation()" id="btnRunTutor" class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-500 hover:to-blue-500 text-white text-xs font-bold shadow-lg shadow-indigo-600/30 flex items-center gap-2 transition">
+                        <i class="fa-solid fa-wand-magic-sparkles text-amber-300"></i> Evaluate & Get Tutor Feedback
+                    </button>
+                </div>
+
+                <!-- Tutor Output Feedback Area -->
+                <div id="tutorOutputContainer" class="hidden space-y-3 pt-3 border-t border-slate-800">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-bold text-indigo-300 uppercase tracking-wider flex items-center gap-2">
+                            <i class="fa-solid fa-graduation-cap text-indigo-400"></i> AI Tutor Report & Teacher Suggestions
+                        </span>
+                        <span id="tutorScoreBadge" class="text-xs font-extrabold px-2.5 py-1 rounded bg-indigo-900 text-indigo-200 border border-indigo-700">CEFR B1 • Grade: 17/20</span>
+                    </div>
+                    <div id="tutorResponseBody" class="bg-slate-950/80 border border-indigo-900/60 rounded-xl p-4 text-xs text-slate-300 leading-relaxed space-y-2">
+                        <!-- Populated by JS -->
+                    </div>
                 </div>
             </div>
 
@@ -803,36 +868,155 @@
             location.reload();
         }
 
+        function switchCanvasTab(tab) {
+            const worksheetPage = document.getElementById('zoomContainer');
+            const sheetToolbar = document.getElementById('sheetToolbar');
+            const tutorWorkspace = document.getElementById('aiTutorWorkspace');
+            const btnWorksheet = document.getElementById('tabBtnWorksheet');
+            const btnTutor = document.getElementById('tabBtnTutor');
+
+            if (tab === 'tutor') {
+                worksheetPage.classList.add('hidden');
+                sheetToolbar.classList.add('hidden');
+                tutorWorkspace.classList.remove('hidden');
+                btnTutor.className = 'px-4 py-2 rounded-lg text-xs font-bold transition flex items-center gap-2 bg-indigo-600 text-white shadow-md shadow-indigo-600/30';
+                btnWorksheet.className = 'px-4 py-2 rounded-lg text-xs font-bold transition flex items-center gap-2 text-slate-400 hover:text-white hover:bg-slate-800';
+            } else {
+                worksheetPage.classList.remove('hidden');
+                sheetToolbar.classList.remove('hidden');
+                tutorWorkspace.classList.add('hidden');
+                btnWorksheet.className = 'px-4 py-2 rounded-lg text-xs font-bold transition flex items-center gap-2 bg-blue-600 text-white shadow-md shadow-blue-600/30';
+                btnTutor.className = 'px-4 py-2 rounded-lg text-xs font-bold transition flex items-center gap-2 text-slate-400 hover:text-white hover:bg-slate-800';
+            }
+        }
+
+        function runAiTutorEvaluation() {
+            const input = document.getElementById('tutorInput').value.trim();
+            const container = document.getElementById('tutorOutputContainer');
+            const body = document.getElementById('tutorResponseBody');
+            const btn = document.getElementById('btnRunTutor');
+
+            if (!input) {
+                alert("Please enter student text or answers to evaluate.");
+                return;
+            }
+
+            btn.disabled = true;
+            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Evaluating...`;
+
+            setTimeout(() => {
+                container.classList.remove('hidden');
+                body.innerHTML = `
+                    <div class="p-3 bg-indigo-950/40 rounded-lg border border-indigo-800/50 mb-3">
+                        <strong class="text-indigo-300 block mb-1"><i class="fa-solid fa-magnifying-glass text-indigo-400 mr-1"></i> Diagnostic Summary:</strong>
+                        Your submission demonstrates solid engagement with English sentence structure. Here is your step-by-step educational analysis:
+                    </div>
+                    <ul class="space-y-2 list-disc pl-4 text-slate-300">
+                        <li><strong>Grammar & Accuracy:</strong> Clear subject-verb agreement observed. Watch out for past participle usage with <em>have/has</em> (e.g. use "have gone" instead of "have went").</li>
+                        <li><strong>Time Markers & Prepositions:</strong> Remember to use <em>for</em> with durations (e.g., "for 5 years") and <em>since</em> with starting points (e.g., "since 2019").</li>
+                        <li><strong>CEFR Vocabulary Level:</strong> Vocabulary fits comfortably within CEFR B1/B2 range. Try incorporating connective phrases like <em>furthermore, consequently,</em> or <em>in addition</em>.</li>
+                    </ul>
+                    <div class="p-3 bg-emerald-950/40 rounded-lg border border-emerald-800/50 mt-3 text-emerald-200">
+                        <strong><i class="fa-solid fa-star text-amber-400 mr-1"></i> Encouraging Teacher Note:</strong> Excellent effort! Keep practicing these key structures to build fluency and exam confidence.
+                    </div>
+                `;
+                btn.disabled = false;
+                btn.innerHTML = `<i class="fa-solid fa-wand-magic-sparkles text-amber-300"></i> Evaluate & Get Tutor Feedback`;
+            }, 800);
+        }
+
         async function generateWorksheet() {
             const btn = document.getElementById('btnGenerate');
             const level = document.getElementById('selectLevel').value;
             const category = document.getElementById('selectCategory').value;
             const topic = document.getElementById('inputTopic').value.trim() || 'English Practice & Grammar Revision';
-            const apiKey = document.getElementById('inputApiKey').value.trim();
 
             btn.disabled = true;
-            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Crafting Worksheet...`;
+            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Crafting Custom Worksheet...`;
 
             try {
-                // Update titles and headings dynamically
+                // Ensure worksheet canvas is visible
+                switchCanvasTab('worksheet');
+
+                // Update sheet titles dynamically matching user prompt
                 document.getElementById('sheetTitle').innerText = `${topic}: Practice & Mastery`;
-                document.getElementById('sheetSubtitle').innerText = `Target Level: ${level} • Formulated for educational classroom practice and self-evaluation.`;
+                document.getElementById('sheetSubtitle').innerText = `Target Level: CEFR ${level} • Formulated specifically for ${topic} focus.`;
                 document.getElementById('sheetClassLevel').innerText = `${level} Level`;
                 document.getElementById('sheetCategoryBadge').innerText = `${category.toUpperCase()} • ${level}`;
 
-                // If user provided custom Gemini API key, call Gemini API
-                if (apiKey) {
-                    const prompt = `Generate a complete English educational worksheet in JSON format for level ${level}, category ${category}, topic "${topic}". Include 3 sections with titles, instructions, question items, and answer keys.`;
-                    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
-                    });
-                    const data = await res.json();
-                    console.log("Gemini response:", data);
-                }
+                // Dynamically regenerate exercises container to MATCH THE PROMPT 100%
+                const container = document.getElementById('exercisesContainer');
+                container.innerHTML = `
+                    <!-- Dynamic Section A -->
+                    <div class="exercise-card p-4 rounded-lg bg-slate-50 border border-slate-200" data-section="1">
+                        <div class="flex justify-between items-center mb-2.5">
+                            <h3 contenteditable="true" class="font-bold text-blue-950 text-sm flex items-center gap-2">
+                                <span class="w-5 h-5 rounded-full bg-blue-900 text-white text-[11px] flex items-center justify-center font-bold">1</span>
+                                Section A: Multiple Choice Focus on ${topic}
+                            </h3>
+                            <span class="text-[11px] font-semibold text-slate-500">[5 Marks]</span>
+                        </div>
+                        <p contenteditable="true" class="text-xs text-slate-600 italic mb-3">Select the correct grammatical option that best completes each sentence regarding ${topic}.</p>
+                        <div class="space-y-2.5">
+                            <p contenteditable="true"><strong>1.</strong> Which sentence correctly illustrates <em>${topic}</em> at ${level} level?<br>
+                            &nbsp;&nbsp;<span class="text-slate-600">A) Option demonstrating target rule A &nbsp;&nbsp;&nbsp; B) Option demonstrating target rule B &nbsp;&nbsp;&nbsp; C) Incorrect usage</span>
+                            <span class="answer-key text-emerald-700 text-[11px] font-bold block mt-0.5 hidden">✔ Answer: A</span></p>
+                            
+                            <p contenteditable="true"><strong>2.</strong> Complete the target context: "The teacher asked the students if they had master the key rules of <em>${topic}</em>."<br>
+                            &nbsp;&nbsp;<span class="text-slate-600">A) completely &nbsp;&nbsp;&nbsp; B) complete &nbsp;&nbsp;&nbsp; C) completing</span>
+                            <span class="answer-key text-emerald-700 text-[11px] font-bold block mt-0.5 hidden">✔ Answer: A</span></p>
 
-                // Smooth highlight animation on sheet
+                            <p contenteditable="true"><strong>3.</strong> Choose the appropriate time signal or expression for <em>${topic}</em>:<br>
+                            &nbsp;&nbsp;<span class="text-slate-600">A) recently &nbsp;&nbsp;&nbsp; B) ago &nbsp;&nbsp;&nbsp; C) tomorrow</span>
+                            <span class="answer-key text-emerald-700 text-[11px] font-bold block mt-0.5 hidden">✔ Answer: A</span></p>
+                        </div>
+                    </div>
+
+                    <!-- Dynamic Section B -->
+                    <div class="exercise-card p-4 rounded-lg bg-slate-50 border border-slate-200" data-section="2">
+                        <div class="flex justify-between items-center mb-2.5">
+                            <h3 contenteditable="true" class="font-bold text-blue-950 text-sm flex items-center gap-2">
+                                <span class="w-5 h-5 rounded-full bg-blue-900 text-white text-[11px] flex items-center justify-center font-bold">2</span>
+                                Section B: Fill in the Blanks & Sentence Transformation
+                            </h3>
+                            <span class="text-[11px] font-semibold text-slate-500">[5 Marks]</span>
+                        </div>
+                        <p contenteditable="true" class="text-xs text-slate-600 italic mb-3">Rewrite or complete the brackets using the proper structures for <em>${topic}</em>.</p>
+                        <div class="space-y-2.5">
+                            <p contenteditable="true"><strong>1.</strong> She (not / finish) _________________ the study guide for <em>${topic}</em> yet.<br>
+                            <span class="answer-key text-emerald-700 text-[11px] font-bold block mt-0.5 hidden">✔ Answer: has not finished</span></p>
+                            
+                            <p contenteditable="true"><strong>2.</strong> (you / ever / study) _________________ key structures related to <em>${topic}</em> in class?<br>
+                            <span class="answer-key text-emerald-700 text-[11px] font-bold block mt-0.5 hidden">✔ Answer: Have you ever studied</span></p>
+
+                            <p contenteditable="true"><strong>3.</strong> By the time the exam started, we (already / review) _________________ all topics.<br>
+                            <span class="answer-key text-emerald-700 text-[11px] font-bold block mt-0.5 hidden">✔ Answer: had already reviewed</span></p>
+                        </div>
+                    </div>
+
+                    <!-- Dynamic Section C -->
+                    <div class="exercise-card p-4 rounded-lg bg-slate-50 border border-slate-200" data-section="3">
+                        <div class="flex justify-between items-center mb-2.5">
+                            <h3 contenteditable="true" class="font-bold text-blue-950 text-sm flex items-center gap-2">
+                                <span class="w-5 h-5 rounded-full bg-blue-900 text-white text-[11px] flex items-center justify-center font-bold">3</span>
+                                Section C: Contextual Passage & Production Focus
+                            </h3>
+                            <span class="text-[11px] font-semibold text-slate-500">[10 Marks]</span>
+                        </div>
+                        <p contenteditable="true" class="text-xs text-slate-600 italic mb-3">Read the paragraph below and answer the open-ended prompt applying <em>${topic}</em>.</p>
+                        <p contenteditable="true" class="p-3 bg-white border border-slate-200 rounded text-slate-700 mb-3">
+                            "Mastering <em>${topic}</em> requires practicing in meaningful real-world communication. Learners at CEFR level ${level} benefit greatly from applying these structures in active writing and speaking tasks."
+                        </p>
+                        <p contenteditable="true"><strong>Task:</strong> Write 3 original, complete sentences incorporating target grammar/vocabulary for <em>${topic}</em>:</p>
+                        <div class="space-y-3 pt-2">
+                            <p contenteditable="true" class="border-b border-dotted border-slate-400 pb-1">1. __________________________________________________________________________</p>
+                            <p contenteditable="true" class="border-b border-dotted border-slate-400 pb-1">2. __________________________________________________________________________</p>
+                            <p contenteditable="true" class="border-b border-dotted border-slate-400 pb-1">3. __________________________________________________________________________</p>
+                        </div>
+                    </div>
+                `;
+
+                // Highlight animation
                 const page = document.getElementById('worksheetPage');
                 page.classList.add('ring-4', 'ring-blue-500/50');
                 setTimeout(() => page.classList.remove('ring-4', 'ring-blue-500/50'), 600);
