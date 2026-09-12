@@ -1,6 +1,6 @@
 {
   "name": "English Worksheet Studio",
-  "description": "Generate dynamic English subject worksheets, CEFR grammar exercises, reading comprehension, and exams using Gemini AI.",
+  "description": "Generate dynamic English subject worksheets, CEFR grammar exercises, reading comprehension, A4 print preview, and full-screen Focus Print View verification using Gemini AI.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

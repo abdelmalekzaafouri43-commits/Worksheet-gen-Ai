@@ -42,7 +42,9 @@ import androidx.compose.material.icons.filled.FormatSize
 import androidx.compose.material.icons.filled.FormatPaint
 import androidx.compose.material.icons.filled.ViewQuilt
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.geometry.Offset
@@ -541,6 +543,7 @@ fun WorksheetStudioApp(viewModel: WorksheetViewModel) {
         }
     ) {
         val snackbarHostState = remember { SnackbarHostState() }
+        var isFocusPrintMode by remember { mutableStateOf(false) }
 
         if (showThemeModal) {
             val customizationSettings by viewModel.customizationSettings.collectAsState()
@@ -556,20 +559,53 @@ fun WorksheetStudioApp(viewModel: WorksheetViewModel) {
         Scaffold(
             snackbarHost = { SnackbarHost(snackbarHostState) },
             topBar = {
-                TopAppBar(
-                    title = {
-                        Column {
-                            Text("English Worksheet Studio", fontWeight = FontWeight.Bold, fontSize = 17.sp)
-                            Text("Mr. Zaafouri Abdelmalek", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.SemiBold)
-                        }
-                    },
-                    navigationIcon = {
-                        IconButton(onClick = { scope.launch { drawerState.open() } }) {
-                            Icon(Icons.Default.Menu, contentDescription = "Menu")
-                        }
-                    },
-                    actions = {
+                if (!isFocusPrintMode) {
+                    TopAppBar(
+                        title = {
+                            Column {
+                                Text("English Worksheet Studio", fontWeight = FontWeight.Bold, fontSize = 17.sp)
+                                Text("Mr. Zaafouri Abdelmalek", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.SemiBold)
+                            }
+                        },
+                        navigationIcon = {
+                            IconButton(onClick = { scope.launch { drawerState.open() } }) {
+                                Icon(Icons.Default.Menu, contentDescription = "Menu")
+                            }
+                        },
+                        actions = {
                         val isDarkMode by viewModel.isDarkMode.collectAsState()
+                        
+                        // Prominent Night Mode / Light Mode Toggle Button in TopAppBar
+                        FilledTonalButton(
+                            onClick = { viewModel.toggleDarkMode() },
+                            contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp),
+                            shape = RoundedCornerShape(20.dp),
+                            colors = ButtonDefaults.filledTonalButtonColors(
+                                containerColor = if (isDarkMode) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.secondaryContainer,
+                                contentColor = if (isDarkMode) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSecondaryContainer
+                            ),
+                            modifier = Modifier.padding(end = 4.dp)
+                        ) {
+                            Icon(
+                                if (isDarkMode) Icons.Default.DarkMode else Icons.Default.LightMode,
+                                contentDescription = "Toggle Night Mode",
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Spacer(Modifier.width(4.dp))
+                            Text(
+                                if (isDarkMode) "Night" else "Light",
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+
+                        IconButton(onClick = { isFocusPrintMode = true }) {
+                            Icon(
+                                Icons.Filled.Visibility,
+                                contentDescription = "Focus Print View",
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                        }
                         IconButton(onClick = { showThemeModal = true }) {
                             Icon(
                                 Icons.Default.Palette,
@@ -577,58 +613,69 @@ fun WorksheetStudioApp(viewModel: WorksheetViewModel) {
                                 tint = MaterialTheme.colorScheme.primary
                             )
                         }
-                        IconButton(onClick = { viewModel.toggleDarkMode() }) {
-                            Icon(
-                                if (isDarkMode) Icons.Default.LightMode else Icons.Default.DarkMode,
-                                contentDescription = "Toggle Dark Mode"
-                            )
-                        }
-                    },
-                    colors = TopAppBarDefaults.topAppBarColors(
-                        containerColor = MaterialTheme.colorScheme.background,
-                        titleContentColor = MaterialTheme.colorScheme.onBackground,
-                        navigationIconContentColor = MaterialTheme.colorScheme.onBackground,
-                        actionIconContentColor = MaterialTheme.colorScheme.onBackground
+                        },
+                        colors = TopAppBarDefaults.topAppBarColors(
+                            containerColor = MaterialTheme.colorScheme.background,
+                            titleContentColor = MaterialTheme.colorScheme.onBackground,
+                            navigationIconContentColor = MaterialTheme.colorScheme.onBackground,
+                            actionIconContentColor = MaterialTheme.colorScheme.onBackground
+                        )
                     )
-                )
+                }
             },
             containerColor = MaterialTheme.colorScheme.background
         ) { paddingValues ->
             BoxWithConstraints(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(paddingValues)
+                    .padding(if (isFocusPrintMode) PaddingValues(0.dp) else paddingValues)
             ) {
-                val isTablet = maxWidth >= 700.dp
-                // Dashboard is ALWAYS on the LEFT of the screen
-                Row(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(if (isTablet) 16.dp else 10.dp),
-                    horizontalArrangement = Arrangement.spacedBy(if (isTablet) 16.dp else 10.dp)
-                ) {
-                    // Configuration Dashboard ALWAYS on the LEFT
-                    Column(
-                        modifier = Modifier
-                            .weight(if (isTablet) 1.15f else 1.12f)
-                            .fillMaxHeight()
-                            .verticalScroll(rememberScrollState())
-                    ) {
-                        GlassAiArea(
-                            viewModel = viewModel,
-                            isCompact = !isTablet,
-                            onOpenCustomizer = { showThemeModal = true }
-                        )
-                    }
-                    // Preview on the RIGHT
+                if (isFocusPrintMode) {
+                    // Fullscreen Focus Print View: Dashboard hidden, A4 Sheet maximized
                     WorksheetPreview(
                         viewModel = viewModel,
                         snackbarHostState = snackbarHostState,
                         onOpenCustomizer = { showThemeModal = true },
+                        isFocusPrintMode = true,
+                        onToggleFocusPrintMode = { isFocusPrintMode = false },
                         modifier = Modifier
-                            .weight(if (isTablet) 1.25f else 1f)
-                            .fillMaxHeight()
+                            .fillMaxSize()
+                            .padding(horizontal = 16.dp, vertical = 8.dp)
                     )
+                } else {
+                    val isTablet = maxWidth >= 700.dp
+                    // Dashboard is ALWAYS on the LEFT of the screen
+                    Row(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(if (isTablet) 16.dp else 10.dp),
+                        horizontalArrangement = Arrangement.spacedBy(if (isTablet) 16.dp else 10.dp)
+                    ) {
+                        // Configuration Dashboard ALWAYS on the LEFT
+                        Column(
+                            modifier = Modifier
+                                .weight(if (isTablet) 1.15f else 1.12f)
+                                .fillMaxHeight()
+                                .verticalScroll(rememberScrollState())
+                        ) {
+                            GlassAiArea(
+                                viewModel = viewModel,
+                                isCompact = !isTablet,
+                                onOpenCustomizer = { showThemeModal = true }
+                            )
+                        }
+                        // Preview on the RIGHT
+                        WorksheetPreview(
+                            viewModel = viewModel,
+                            snackbarHostState = snackbarHostState,
+                            onOpenCustomizer = { showThemeModal = true },
+                            isFocusPrintMode = false,
+                            onToggleFocusPrintMode = { isFocusPrintMode = true },
+                            modifier = Modifier
+                                .weight(if (isTablet) 1.25f else 1f)
+                                .fillMaxHeight()
+                        )
+                    }
                 }
             }
         }
@@ -829,30 +876,60 @@ fun GlassAiArea(
                     }
                 }
 
-                // Frosted Status Chip
-                Surface(
-                    shape = RoundedCornerShape(20.dp),
-                    color = if (isDarkMode) Color(0x33FFFFFF) else Color(0x80E2E8F0),
-                    border = BorderStroke(1.dp, if (isDarkMode) Color(0x4DFFFFFF) else Color(0x66CBD5E1))
-                ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                        verticalAlignment = Alignment.CenterVertically
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    // Quick Night Mode Switch inside Dashboard
+                    Surface(
+                        onClick = { viewModel.toggleDarkMode() },
+                        shape = RoundedCornerShape(20.dp),
+                        color = if (isDarkMode) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant,
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.4f))
                     ) {
-                        Box(
-                            modifier = Modifier
-                                .size(6.dp)
-                                .clip(RoundedCornerShape(3.dp))
-                                .background(if (isLoading) Color(0xFFF59E0B) else Color(0xFF10B981))
-                        )
-                        Spacer(Modifier.width(5.dp))
-                        Text(
-                            text = if (isLoading) "GENERATING" else "ENGLISH ONLY",
-                            style = MaterialTheme.typography.labelSmall,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 9.sp,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
+                        Row(
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            Icon(
+                                if (isDarkMode) Icons.Default.DarkMode else Icons.Default.LightMode,
+                                contentDescription = "Toggle Night Mode",
+                                tint = if (isDarkMode) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.size(13.dp)
+                            )
+                            Text(
+                                text = if (isDarkMode) "Night" else "Light",
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 10.sp,
+                                color = if (isDarkMode) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+
+                    // Frosted Status Chip
+                    Surface(
+                        shape = RoundedCornerShape(20.dp),
+                        color = if (isDarkMode) Color(0x33FFFFFF) else Color(0x80E2E8F0),
+                        border = BorderStroke(1.dp, if (isDarkMode) Color(0x4DFFFFFF) else Color(0x66CBD5E1))
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(6.dp)
+                                    .clip(RoundedCornerShape(3.dp))
+                                    .background(if (isLoading) Color(0xFFF59E0B) else Color(0xFF10B981))
+                            )
+                            Spacer(Modifier.width(5.dp))
+                            Text(
+                                text = if (isLoading) "GENERATING" else "ENGLISH ONLY",
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 9.sp,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
                     }
                 }
             }
@@ -1287,6 +1364,8 @@ fun WorksheetPreview(
     viewModel: WorksheetViewModel,
     snackbarHostState: SnackbarHostState? = null,
     onOpenCustomizer: () -> Unit = {},
+    isFocusPrintMode: Boolean = false,
+    onToggleFocusPrintMode: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -1373,8 +1452,24 @@ fun WorksheetPreview(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
+                if (isFocusPrintMode) {
+                    Button(
+                        onClick = onToggleFocusPrintMode,
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                            contentColor = MaterialTheme.colorScheme.onSurfaceVariant
+                        ),
+                        shape = RoundedCornerShape(8.dp),
+                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp)
+                    ) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Exit Focus Mode", modifier = Modifier.size(16.dp))
+                        Spacer(Modifier.width(4.dp))
+                        Text("Exit Focus", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                    }
+                }
+
                 Text(
-                    "Preview",
+                    if (isFocusPrintMode) "Focus Print View (A4)" else "Preview",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onBackground
@@ -1416,6 +1511,32 @@ fun WorksheetPreview(
             }
 
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+                val isDarkMode by viewModel.isDarkMode.collectAsState()
+                IconButton(
+                    onClick = { viewModel.toggleDarkMode() },
+                    modifier = Modifier.size(32.dp)
+                ) {
+                    Icon(
+                        if (isDarkMode) Icons.Default.DarkMode else Icons.Default.LightMode,
+                        contentDescription = "Toggle Night Mode",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
+
+                // Focus Print View toggle button
+                IconButton(
+                    onClick = onToggleFocusPrintMode,
+                    modifier = Modifier.size(32.dp)
+                ) {
+                    Icon(
+                        if (isFocusPrintMode) Icons.Filled.VisibilityOff else Icons.Filled.Visibility,
+                        contentDescription = if (isFocusPrintMode) "Exit Focus Print View" else "Focus Print View",
+                        tint = if (isFocusPrintMode) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+
                 IconButton(
                     onClick = { onOpenCustomizer() },
                     modifier = Modifier.size(32.dp)
